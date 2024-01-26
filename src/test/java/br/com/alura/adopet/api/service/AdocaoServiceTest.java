@@ -1,10 +1,8 @@
 package br.com.alura.adopet.api.service;
 
+import br.com.alura.adopet.api.dto.AprovacaoAdocaoDto;
 import br.com.alura.adopet.api.dto.SolicitacaoAdocaoDto;
-import br.com.alura.adopet.api.model.Abrigo;
-import br.com.alura.adopet.api.model.Adocao;
-import br.com.alura.adopet.api.model.Pet;
-import br.com.alura.adopet.api.model.Tutor;
+import br.com.alura.adopet.api.model.*;
 import br.com.alura.adopet.api.repository.AdocaoRepository;
 import br.com.alura.adopet.api.repository.PetRepository;
 import br.com.alura.adopet.api.repository.TutorRepository;
@@ -14,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +61,15 @@ class AdocaoServiceTest {
     @Captor
     private ArgumentCaptor<Adocao> adocaoCaptor;
 
+    @Mock
+    private AprovacaoAdocaoDto aprovacaoAdocaoDto;
+
+    @Mock
+    private StatusAdocao statusAdocao;
+
+    @Mock
+    private Adocao adocao;
+
     @Test
     void deveriaSalvarAdocaoAoSolicitar(){
         this.dto = new SolicitacaoAdocaoDto(10l, 20l, "Motivo qualquer");
@@ -91,5 +99,20 @@ class AdocaoServiceTest {
 
         then(validacao1).should().validar(dto);
         then(validacao2).should().validar(dto);
+    }
+
+    @Test
+    void deveMarcarAprovado(){
+        given(repository.getReferenceById(aprovacaoAdocaoDto.idAdocao())).willReturn(adocao);
+        given(adocao.getPet()).willReturn(pet);
+        given(pet.getAbrigo()).willReturn(abrigo);
+        given(adocao.getTutor()).willReturn(tutor);
+        given(adocao.getData()).willReturn( LocalDateTime.now());
+        given(adocao.getStatus()).willReturn(statusAdocao.REPROVADO);
+
+        service.aprovar(aprovacaoAdocaoDto);
+        then(adocao).should().marcarComoAprovada();
+
+        assertEquals(statusAdocao.APROVADO, adocao.getStatus());
     }
 }
